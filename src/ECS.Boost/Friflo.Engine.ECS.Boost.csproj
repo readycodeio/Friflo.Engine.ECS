@@ -8,6 +8,11 @@
     <RootNamespace>Friflo.Engine.ECS</RootNamespace>
     <AssemblyName>Friflo.Engine.ECS.Boost</AssemblyName>
     <LangVersion>12.0</LangVersion>
+    <!-- This project always uses unsafe code (the Boost chunk extensions), so enable it for ALL
+         configurations. It was previously set only under Debug/Release below, so the repo's custom
+         configs (DebugSelfHosted, NoDisconnect, Testing) failed with CS0227 when built from the CLI
+         (the IDE builds Friflo as Debug, which is why it only reproduced from the command line). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
       
     <IsTrimmable>true</IsTrimmable>
     <IsAotCompatible>true</IsAotCompatible>
