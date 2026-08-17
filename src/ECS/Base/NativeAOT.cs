@@ -26,18 +26,20 @@ public sealed partial class NativeAOT
     private static      NativeAOT           Instance;
     
     [ExcludeFromCodeCoverage]
-    internal static EntitySchema GetSchema()
-    {
-        var schema = Instance?.entitySchema;
-        if (schema != null) {
-            return schema;
-        }
-        return CreateDefaultSchema();
-    }
-    
+    internal static EntitySchema GetSchema() => EntitySchemaHolder.Schema;
+
+    /// <summary>
+    /// Dead: this was the silent fallback that built an engine-types-only schema when none had been
+    /// created, leaving every later component lookup pointing at the wrong table. The schema is now
+    /// created explicitly or not at all.
+    /// </summary>
     [ExcludeFromCodeCoverage]
+#pragma warning disable CS0162 // unreachable code - body kept for reference
     private static EntitySchema CreateDefaultSchema()
     {
+        throw new InvalidOperationException(
+            "NativeAOT.CreateDefaultSchema is dead code. The EntitySchema is never created implicitly.");
+
         var schema = Instance?.entitySchema;
         if (schema != null) {
             return schema;
@@ -68,7 +70,8 @@ A type initializer threw an exception. To determine which type, inspect the Inne
    at Friflo.Engine.ECS.EntityStore..ctor() + 0x1a
 */
     }
-    
+#pragma warning restore CS0162
+
     private EntitySchema CreateSchemaInternal()
     {
         InitSchema();
@@ -76,6 +79,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
         var dependants  = schemaTypes.CreateSchemaTypes(assemblies);
         entitySchema    = new EntitySchema(dependants, schemaTypes);
         Instance        = this;
+        EntitySchemaHolder.Set(entitySchema);
         return entitySchema;
     }
 
@@ -87,7 +91,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
 
     private void InitSchema()
     {
-        if (Instance?.entitySchema != null) {
+        if (EntitySchemaHolder.IsCreated) {
             throw new InvalidOperationException("EntitySchema already created");
         }
         if (engineTypesRegistered) {

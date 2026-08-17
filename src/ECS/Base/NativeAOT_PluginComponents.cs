@@ -7,7 +7,8 @@ namespace Friflo.Engine.ECS;
 
 public sealed partial class NativeAOT
 {
-    public static bool SchemaCreated => Instance?.entitySchema != null;
+    /// <summary>Whether the process-wide schema has been created. Reading this never creates it.</summary>
+    public static bool SchemaCreated => EntitySchemaHolder.IsCreated;
 
     public int RegisterModComponent(ModComponentRegistration pointers)
     {

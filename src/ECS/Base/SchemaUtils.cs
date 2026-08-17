@@ -29,9 +29,22 @@ internal static class SchemaUtils
 #endif
     }
     
+    /// <summary>Runs the reflection scan. Used only by <see cref="SchemaBootstrap.CreateFromLoadedAssemblies"/>.</summary>
+    internal static EntitySchema CreateSchemaByReflection() => RegisterTypes();
+
+    /// <summary>
+    /// Dead: implicit schema creation was removed. The schema is created explicitly through
+    /// <see cref="NativeAOT.CreateSchema"/> or <see cref="SchemaBootstrap.CreateFromLoadedAssemblies"/>,
+    /// and read through <see cref="EntitySchemaHolder"/>.
+    /// </summary>
     [ExcludeFromCodeCoverage]
+#pragma warning disable CS0162 // unreachable code - body kept for reference
     internal static EntitySchema RegisterSchemaTypes()
     {
+        throw new InvalidOperationException(
+            "SchemaUtils.RegisterSchemaTypes is dead code. The EntitySchema is never created implicitly; "
+            + "create it explicitly via NativeAOT.CreateSchema() or SchemaBootstrap.CreateFromLoadedAssemblies().");
+
         if (NativeAOT.SchemaCreated)
         {
             return NativeAOT.GetSchema();
@@ -44,7 +57,8 @@ internal static class SchemaUtils
 
         return RegisterTypes();
     }
-    
+#pragma warning restore CS0162
+
     private static EntitySchema RegisterTypes()
     {
         var assemblyLoader  = new AssemblyLoader();
