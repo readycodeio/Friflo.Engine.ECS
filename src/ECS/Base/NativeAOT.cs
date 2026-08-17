@@ -79,7 +79,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
         var dependants  = schemaTypes.CreateSchemaTypes(assemblies);
         entitySchema    = new EntitySchema(dependants, schemaTypes);
         Instance        = this;
-        EntitySchemaHolder.Set(entitySchema);
+        EntitySchemaHolder.Set(entitySchema, EntitySchemaSource.RegisteredTypes);
         return entitySchema;
     }
 
@@ -97,7 +97,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
     private void InitSchema()
     {
         if (EntitySchemaHolder.IsCreated) {
-            throw new InvalidOperationException("EntitySchema already created");
+            throw EntitySchemaHolder.AlreadyCreated(EntitySchemaSource.RegisteredTypes);
         }
         if (engineTypesRegistered) {
             return;
