@@ -1,4 +1,4 @@
-﻿// Copyright (c) Ullrich Praetz - https://github.com/friflo. All rights reserved.
+// Copyright (c) Ullrich Praetz - https://github.com/friflo. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
 using System;
@@ -74,7 +74,10 @@ A type initializer threw an exception. To determine which type, inspect the Inne
 
     private EntitySchema CreateSchemaInternal()
     {
-        InitSchema();
+        if (EntitySchemaHolder.IsCreated) {
+            throw EntitySchemaHolder.AlreadyCreated(EntitySchemaSource.RegisteredTypes);
+        }
+        RegisterEngineTypes();
 
         var dependants  = schemaTypes.CreateSchemaTypes(assemblies);
         entitySchema    = new EntitySchema(dependants, schemaTypes);
@@ -85,7 +88,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
 
     /// <summary>
     /// Creates the schema from the types registered on this instance.
-    /// Prefer <see cref="SchemaBootstrap.CreateFromRegisteredTypes"/>: schema creation is routed through
+    /// Prefer <see cref="SchemaBootstrap.InitializeFromRegisteredTypes"/>: schema creation is routed through
     /// <see cref="SchemaBootstrap"/> so there is a single place that documents how and when it happens.
     /// </summary>
     public EntitySchema CreateSchema()
@@ -94,11 +97,29 @@ A type initializer threw an exception. To determine which type, inspect the Inne
         return CreateSchemaInternal();
     }
 
-    private void InitSchema()
+    /// <summary>
+    /// The shape of the types registered on this instance, for comparing a repeated initialization against
+    /// the schema already in place. Registers the engine types first, exactly as schema creation would, so
+    /// the description covers the same set a real creation would produce.
+    /// </summary>
+    internal string DescribeRegisteredTypes()
     {
-        if (EntitySchemaHolder.IsCreated) {
-            throw EntitySchemaHolder.AlreadyCreated(EntitySchemaSource.RegisteredTypes);
-        }
+        RegisterEngineTypes();
+        return EntitySchemaHolder.DescribeShape(typeSet, schemaTypes.components);
+    }
+
+    /// <summary>
+    /// Adds the engine's own types, once per instance. Called by every registration entry point so they are
+    /// present however the instance is used.
+    /// <para>
+    /// Deliberately NOT guarded on "a schema already exists". Registering into an instance that will not
+    /// create the schema is harmless - it is a throwaway object - and it is what a process with more than one
+    /// container does. The guard that matters lives on creation instead: see CreateSchemaInternal,
+    /// EntitySchemaHolder.Initialize and EntitySchemaHolder.Set.
+    /// </para>
+    /// </summary>
+    private void RegisterEngineTypes()
+    {
         if (engineTypesRegistered) {
             return;
         }
@@ -132,7 +153,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
     
     public void RegisterComponent<T>() where T : struct, IComponent 
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T))) {
             AddType(typeof(T), SchemaTypeKind.Component);
             SchemaUtils.CreateComponentType<T>(0, null, null); // dummy call to prevent trimming required type info
@@ -143,7 +164,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
         where T : struct, IIndexedComponent<TValue>
         where TValue : class
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T)))
         {
             AddType(typeof(T), SchemaTypeKind.Component);
@@ -159,7 +180,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
         where T : struct, IIndexedComponent<TValue>
         where TValue : struct
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T)))
         {
             AddType(typeof(T), SchemaTypeKind.Component);
@@ -174,7 +195,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
     public void RegisterIndexedComponentEntity<T>()
         where T : struct, ILinkComponent
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T)))
         {
             AddType(typeof(T), SchemaTypeKind.Component);
@@ -189,7 +210,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
     public void RegisterRelation<T, TKey>()
         where T : struct, IRelation<TKey>
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T)))
         {
             AddType(typeof(T), SchemaTypeKind.Component);
@@ -204,7 +225,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
     public void RegisterLinkRelation<T>()
         where T : struct, ILinkRelation
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T)))
         {
             AddType(typeof(T), SchemaTypeKind.Component);
@@ -218,7 +239,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
 
     public void RegisterTag<T>()  where T : struct, ITag 
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T))) {
             AddType(typeof(T), SchemaTypeKind.Tag);
             SchemaUtils.CreateTagType<T>(0);                        // dummy call to prevent trimming required type info
@@ -227,7 +248,7 @@ A type initializer threw an exception. To determine which type, inspect the Inne
     
     public void RegisterScript<T>()  where T : Script, new()
     {
-        InitSchema();
+        RegisterEngineTypes();
         if (typeSet.Add(typeof(T))) {
             AddType(typeof(T), SchemaTypeKind.Script);
             SchemaUtils.CreateScriptType<T>(0);          // dummy call to prevent trimming required type info

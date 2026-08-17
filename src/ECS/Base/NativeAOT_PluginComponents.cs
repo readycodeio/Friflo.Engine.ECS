@@ -7,8 +7,16 @@ namespace Friflo.Engine.ECS;
 
 public sealed partial class NativeAOT
 {
-    /// <summary>Whether the process-wide schema has been created. Reading this never creates it.</summary>
-    public static bool SchemaCreated => EntitySchemaHolder.IsCreated;
+    /// <summary>
+    /// Whether the process-wide schema has been created. Reading this never creates it.
+    /// <para>
+    /// Deliberately NOT public: outside this assembly it only enables `if (!SchemaCreated) Create()`, which
+    /// is unsound across threads. Use <see cref="SchemaBootstrap.TryInitializeFromRegisteredTypes"/> or
+    /// <see cref="SchemaBootstrap.TryInitializeFromLoadedAssemblies"/> and read the result, or
+    /// <see cref="SchemaBootstrap.SchemaSource"/> for diagnostics.
+    /// </para>
+    /// </summary>
+    internal static bool SchemaCreated => EntitySchemaHolder.IsCreated;
 
     public int RegisterModComponent(ModComponentRegistration pointers)
     {
