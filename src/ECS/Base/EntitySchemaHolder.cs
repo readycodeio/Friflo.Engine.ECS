@@ -70,6 +70,13 @@ internal static class EntitySchemaHolder
     /// <summary>How the schema was created, or <see cref="EntitySchemaSource.NotCreated"/> if it was not.</summary>
     internal static EntitySchemaSource Source => source;
 
+    /// <summary>
+    /// Whether a repeated initialization through the same mechanism is tolerated in this process. Whether a
+    /// repeat throws depends on it, so anything asserting either behaviour should state which it expects
+    /// rather than assume.
+    /// </summary>
+    internal static bool RepeatsAllowed { get { lock (gate) { return onRepeatedInitialization != null; } } }
+
     internal static EntitySchema Schema => schema ?? throw NotCreated();
 
     /// <summary>All items are always null. Sized by the schema's <c>maxStructIndex</c>.</summary>

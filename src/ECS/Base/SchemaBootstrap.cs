@@ -62,6 +62,13 @@ public static class SchemaBootstrap
     public static EntitySchemaSource SchemaSource => EntitySchemaHolder.Source;
 
     /// <summary>
+    /// Whether <see cref="AllowRepeatedInitializationForTests"/> is in effect for this process. Whether a
+    /// repeated initialization throws depends on it, so a test asserting either behaviour should state which
+    /// mode it expects rather than assume the process it happens to run in.
+    /// </summary>
+    public static bool RepeatedInitializationAllowed => EntitySchemaHolder.RepeatsAllowed;
+
+    /// <summary>
     /// Downgrades a repeated initialization through the same mechanism from a hard failure to a report on
     /// <paramref name="onRepeat"/>. FOR TEST PROCESSES ONLY.
     /// <para>
