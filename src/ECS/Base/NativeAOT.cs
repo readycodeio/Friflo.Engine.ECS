@@ -83,6 +83,11 @@ A type initializer threw an exception. To determine which type, inspect the Inne
         return entitySchema;
     }
 
+    /// <summary>
+    /// Creates the schema from the types registered on this instance.
+    /// Prefer <see cref="SchemaBootstrap.CreateFromRegisteredTypes"/>: schema creation is routed through
+    /// <see cref="SchemaBootstrap"/> so there is a single place that documents how and when it happens.
+    /// </summary>
     public EntitySchema CreateSchema()
     {
         Console.WriteLine("NativeAOT.CreateSchema()");
