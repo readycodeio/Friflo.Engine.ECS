@@ -38,7 +38,7 @@ public delegate void AllocHeapDelegate(int capacity, IntPtr outAOTHeapPointers);
 
 internal sealed class ModComponentType : ComponentType
 {
-    public override string ToString() => $"ModComponent[{StructIndex}] stride:{registration.Stride}";
+    public override string ToString() => $"ModComponent[{StructIndex}] {ComponentKey} stride:{registration.Stride}";
 
     private readonly ModComponentRegistration registration;
 
@@ -46,9 +46,14 @@ internal sealed class ModComponentType : ComponentType
     // between archetype materializations.
     private readonly AllocHeapDelegate allocHeap;
 
-    internal ModComponentType(int structIndex, ModComponentRegistration registration)
+    /// <param name="componentName">
+    /// The mod component's full type name. It is the schema's key for this component, which is how a caller
+    /// that did not create the schema finds its struct index: keying by the struct index, as this used to,
+    /// makes the key the answer to the only question worth asking it.
+    /// </param>
+    internal ModComponentType(int structIndex, ModComponentRegistration registration, string componentName)
         : base(
-            componentKey:   $"mod_{structIndex}",
+            componentKey:   componentName,
             structIndex:    structIndex,
             type:           typeof(ModComponentMarker),
             indexType:      null,
@@ -57,6 +62,11 @@ internal sealed class ModComponentType : ComponentType
             relationType:   null,
             keyType:        null)
     {
+        if (string.IsNullOrEmpty(componentName)) {
+            throw new ArgumentException(
+                "A mod component needs a name. It is the schema's only handle on a component that has no " +
+                "managed type.", nameof(componentName));
+        }
         this.registration = registration;
         allocHeap    = Marshal.GetDelegateForFunctionPointer<AllocHeapDelegate>(registration.AllocHeap);
 

@@ -18,10 +18,18 @@ public sealed partial class NativeAOT
     /// </summary>
     internal static bool SchemaCreated => EntitySchemaHolder.IsCreated;
 
-    public int RegisterModComponent(ModComponentRegistration pointers)
+    /// <summary>
+    /// Registers a component defined by a mod, which has no managed type on this side.
+    /// </summary>
+    /// <param name="componentName">
+    /// The component's full type name. The sealed schema keys the component by it, so a caller that did not
+    /// create the schema can still resolve the struct index it actually got rather than assuming the one this
+    /// call returned.
+    /// </param>
+    public int RegisterModComponent(ModComponentRegistration pointers, string componentName)
     {
         var structIndex = schemaTypes.components.Count + 1;
-        schemaTypes.components.Add(new ModComponentType(structIndex, pointers));
+        schemaTypes.components.Add(new ModComponentType(structIndex, pointers, componentName));
 
         return structIndex;
     }

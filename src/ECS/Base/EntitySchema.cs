@@ -1,4 +1,4 @@
-﻿// Copyright (c) Ullrich Praetz - https://github.com/friflo. All rights reserved.
+// Copyright (c) Ullrich Praetz - https://github.com/friflo. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
 using System;
@@ -121,7 +121,9 @@ public sealed class EntitySchema
                 }
             }
 
-            if (componentType.Type != typeof(ModComponentMarker))
+            // Mod components share one placeholder Type, so they cannot go in a map keyed by Type. They are
+            // found by ComponentKey instead, which is their own name.
+            if (componentType is not ModComponentType)
             {
                 componentTypeByType.Add(componentType.Type, componentType);
             }
