@@ -89,6 +89,24 @@ public static class SchemaBootstrap
         => EntitySchemaHolder.AllowRepeatedInitialization(onRepeat);
 
     /// <summary>Restores the default, where a repeated initialization is a hard failure.</summary>
+    /// <summary>
+    /// Makes the schema usable only inside an explicit window, for a test process. Off by default, so
+    /// production is unaffected and the schema is usable from the moment it is created.
+    /// <para>
+    /// With it on, a schema is created unusable and each test opens a window, uses it, and closes it. A
+    /// Friflo schema cannot really be rebuilt, so the window is the honest way to express per-test setup:
+    /// touching the schema outside one fails at the mistake rather than letting a test lean on what an
+    /// earlier one left behind.
+    /// </para>
+    /// </summary>
+    public static void EnforceUsageWindowForTests() => EntitySchemaHolder.EnforceUsageWindow();
+
+    /// <summary>Makes the schema usable. Fails if a window is already open, or none was ever created.</summary>
+    public static void OpenUsageWindow() => EntitySchemaHolder.OpenUsage();
+
+    /// <summary>Makes the schema unusable again. Fails if no window is open.</summary>
+    public static void CloseUsageWindow() => EntitySchemaHolder.CloseUsage();
+
     public static void DisallowRepeatedInitialization()
         => EntitySchemaHolder.DisallowRepeatedInitialization();
 
