@@ -1,4 +1,4 @@
-﻿// Copyright (c) Ullrich Praetz - https://github.com/friflo. All rights reserved.
+// Copyright (c) Ullrich Praetz - https://github.com/friflo. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
 using System;
@@ -66,11 +66,7 @@ internal sealed class SchemaTypes
         foreach (var type in componentTypes) {
             
             SchemaType schemaType;
-            if (typeof(ModComponentMarker).IsAssignableFrom(type.type))
-            {
-                schemaType = new ModComponentType(components.Count + 1, default);
-            }
-            else if (typeof(IComponent).IsAssignableFrom(type.type)) {
+            if (typeof(IComponent).IsAssignableFrom(type.type)) {
                 schemaType = CreateComponentType(type.type);
             } else {
                 schemaType = CreateRelationType(type.type);

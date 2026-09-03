@@ -354,7 +354,7 @@ public struct Tags : IEnumerable<TagType>, IEquatable<Tags>
 public struct TagsEnumerator : IEnumerator<TagType>
 {
     private                 BitSetEnumerator    bitSetEnumerator;   // 48
-    private static readonly TagType[]           TagTypes = EntityStoreBase.Static.EntitySchema.tags;
+    private static          TagType[]           TagTypes => EntityStoreBase.Static.EntitySchema.tags;
 
     // --- IEnumerator
     public          void    Reset()             => bitSetEnumerator.Reset();
