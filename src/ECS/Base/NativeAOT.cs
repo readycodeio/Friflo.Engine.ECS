@@ -151,6 +151,11 @@ A type initializer threw an exception. To determine which type, inspect the Inne
         schemaTypes.AddSchemaType(new AssemblyType(type, kind, assemblyIndex));
     }
     
+    /// <summary>
+    /// Registers a component compiled into this build. Its managed type is its identity, so the schema keys it
+    /// by that type and its struct index falls out of <c>StructInfo&lt;T&gt;</c> once the schema is created.
+    /// See <see cref="RegisterModComponent"/> for a component a mod defines, which has no managed type here.
+    /// </summary>
     public void RegisterComponent<T>() where T : struct, IComponent 
     {
         RegisterEngineTypes();
