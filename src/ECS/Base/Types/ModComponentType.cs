@@ -12,7 +12,7 @@ namespace Friflo.Engine.ECS;
 // Friflo.Engine.ECS fork addition.
 
 [StructLayout(LayoutKind.Sequential)]
-public struct ModComponentRegistration
+public struct ModComponentInfo
 {
     /// <summary><c>Unsafe.SizeOf&lt;T&gt;()</c> - informs the AOT side of component stride.</summary>
     public int Stride;
@@ -31,7 +31,7 @@ public struct ModComponentRegistration
 }
 
 /// <summary>
-/// Delegate matching the AllocHeap function pointer in ModComponentRegistration.
+/// Delegate matching the AllocHeap function pointer in ModComponentInfo.
 /// </summary>
 public delegate void AllocHeapDelegate(int capacity, IntPtr outAOTHeapPointers);
 
@@ -40,7 +40,7 @@ internal sealed class ModComponentType : ComponentType
 {
     public override string ToString() => $"ModComponent[{StructIndex}] {ComponentKey} stride:{registration.Stride}";
 
-    private readonly ModComponentRegistration registration;
+    private readonly ModComponentInfo registration;
 
     // Wrapped and stored as a field so the AOT-side GC doesn't collect the delegate wrapper
     // between archetype materializations.
@@ -51,7 +51,7 @@ internal sealed class ModComponentType : ComponentType
     /// that did not create the schema finds its struct index: keying by the struct index, as this used to,
     /// makes the key the answer to the only question worth asking it.
     /// </param>
-    internal ModComponentType(int structIndex, ModComponentRegistration registration, string componentName)
+    internal ModComponentType(int structIndex, ModComponentInfo registration, string componentName)
         : base(
             componentKey:   componentName,
             structIndex:    structIndex,

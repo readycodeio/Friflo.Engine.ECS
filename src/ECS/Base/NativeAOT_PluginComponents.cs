@@ -26,7 +26,7 @@ public sealed partial class NativeAOT
     /// create the schema can still resolve the struct index it actually got rather than assuming the one this
     /// call returned.
     /// </param>
-    public int RegisterModComponent(ModComponentRegistration pointers, string componentName)
+    public int RegisterModComponent(ModComponentInfo pointers, string componentName)
     {
         var structIndex = schemaTypes.components.Count + 1;
         schemaTypes.components.Add(new ModComponentType(structIndex, pointers, componentName));
