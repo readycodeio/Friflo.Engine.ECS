@@ -38,9 +38,9 @@ public delegate void AllocHeapDelegate(int capacity, IntPtr outAOTHeapPointers);
 
 internal sealed class ModComponentType : ComponentType
 {
-    public override string ToString() => $"ModComponent[{StructIndex}] {ComponentKey} stride:{registration.Stride}";
+    public override string ToString() => $"ModComponent[{StructIndex}] {ComponentKey} stride:{info.Stride}";
 
-    private readonly ModComponentInfo registration;
+    private readonly ModComponentInfo info;
 
     // Wrapped and stored as a field so the AOT-side GC doesn't collect the delegate wrapper
     // between archetype materializations.
@@ -51,14 +51,14 @@ internal sealed class ModComponentType : ComponentType
     /// that did not create the schema finds its struct index: keying by the struct index, as this used to,
     /// makes the key the answer to the only question worth asking it.
     /// </param>
-    internal ModComponentType(int structIndex, ModComponentInfo registration, string componentName)
+    internal ModComponentType(int structIndex, ModComponentInfo info, string componentName)
         : base(
             componentKey:   componentName,
             structIndex:    structIndex,
             type:           typeof(ModComponentMarker),
             indexType:      null,
             indexValueType: null,
-            byteSize:       registration.Stride,
+            byteSize:       info.Stride,
             relationType:   null,
             keyType:        null)
     {
@@ -67,10 +67,10 @@ internal sealed class ModComponentType : ComponentType
                 "A mod component needs a name. It is the schema's only handle on a component that has no " +
                 "managed type.", nameof(componentName));
         }
-        this.registration = registration;
-        allocHeap    = Marshal.GetDelegateForFunctionPointer<AllocHeapDelegate>(registration.AllocHeap);
+        this.info = info;
+        allocHeap    = Marshal.GetDelegateForFunctionPointer<AllocHeapDelegate>(info.AllocHeap);
 
-        Unsafe.AsRef(in IsBlittable) = registration.IsBlittable != 0;
+        Unsafe.AsRef(in IsBlittable) = info.IsBlittable != 0;
     }
 
     // Called by the ECS each time an archetype that contains this component type is first
