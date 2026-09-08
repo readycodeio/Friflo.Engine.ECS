@@ -416,7 +416,24 @@ public readonly partial struct Entity : IEquatable<Entity>, IComparable<Entity>
         }
         throw EntityNullException();
     }
-    
+
+    /// <summary>
+    /// ReadyM fork addition. Names a mod component slot as heap plus index instead of an address,
+    /// so the embedded runtime that owns the array is the only side that dereferences it.
+    /// </summary>
+    /// <returns>false when the entity is dead or the component is not a mod component.</returns>
+    public bool TryGetModComponentSlot(int structIndex, out IntPtr heapSelf, out int index) {
+        ref var node = ref store.nodes[Id];
+        if (node.IsAlive(Revision) && node.archetype.heapMap[structIndex] is ExternallyManagedHeap heap) {
+            heapSelf = heap.Self;
+            index    = node.compIndex;
+            return true;
+        }
+        heapSelf = IntPtr.Zero;
+        index    = 0;
+        return false;
+    }
+
     /// <remarks>Executes in O(1)</remarks>
     public bool     TryGetComponent<T>(out T result) where T : struct, IComponent
     {

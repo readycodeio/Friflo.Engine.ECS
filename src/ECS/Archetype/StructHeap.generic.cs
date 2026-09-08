@@ -2,6 +2,10 @@
 // See LICENSE file in the project root for full license information.
 
 using System;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+#endif
 using Friflo.Engine.ECS.Index;
 using Friflo.Json.Burst;
 using Friflo.Json.Fliox;
@@ -34,10 +38,61 @@ internal sealed class StructHeap<T> : StructHeap, IComponentStash<T>
     internal            T[]                 components;     //  8
     internal            T                   componentStash; //  sizeof(T)
 
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// Whether T can live in the pinned object heap. A component holding managed references cannot,
+    /// and handing a raw pointer to one out is unsound anyway, so those keep the unpinned path.
+    /// </summary>
+    private static readonly bool CanPin = !RuntimeHelpers.IsReferenceOrContainsReferences<T>();
+
+    /// <summary>
+    /// Set once <see cref="components"/> lives in the pinned object heap. Only a bool, so it adds
+    /// nothing for the GC to trace, which is what the note above is protecting.
+    /// </summary>
+    private bool pinned;
+
+    private T[] AllocateComponents(int capacity)
+        => pinned ? GC.AllocateArray<T>(capacity, pinned: true) : new T[capacity];
+
+    /// <summary>
+    /// Moves the component array to the pinned object heap, where it will never be relocated.
+    /// Called on the first pointer request, so only components something actually takes a pointer
+    /// to pay for it. Every later resize then allocates pinned as well.
+    /// </summary>
+    private void PinComponents()
+    {
+        if (pinned || !CanPin)
+        {
+            return;
+        }
+
+        pinned = true;
+        var pinnedComponents = GC.AllocateArray<T>(components.Length, pinned: true);
+        new ReadOnlySpan<T>(components).CopyTo(pinnedComponents);
+        components = pinnedComponents;
+    }
+#else
+    private T[] AllocateComponents(int capacity) => new T[capacity];
+#endif
+
+    /// <remarks>
+    /// The returned pointer outlives this call, so the array it points into must not move. On
+    /// net6.0 and up the array is placed in the pinned object heap on first use, which guarantees
+    /// that. The fallback below pins only for the duration of the <c>fixed</c> block, so its result
+    /// is valid only while nothing can collect.
+    /// </remarks>
     public override IntPtr GetComponentPointer(int index)
     {
         unsafe
         {
+#if NET6_0_OR_GREATER
+            PinComponents();
+            if (pinned)
+            {
+                return (IntPtr)Unsafe.AsPointer(
+                    ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(components), index));
+            }
+#endif
             fixed (T* ptr = components)
             {
                 return (IntPtr)(ptr + index);
@@ -66,7 +121,7 @@ internal sealed class StructHeap<T> : StructHeap, IComponentStash<T>
     internal  override  Type    StructType          => typeof(T);
     
     internal override void ResizeComponents    (int capacity, int count) {
-        var newComponents   = new T[capacity];
+        var newComponents   = AllocateComponents(capacity);
         var curComponents   = components;
         var source          = new ReadOnlySpan<T>(curComponents, 0, count);
         var target          = new Span<T>(newComponents);

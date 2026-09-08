@@ -13,24 +13,19 @@ namespace Friflo.Engine.ECS;
 /// <summary>
 /// AOT-side StructHeap backed by a TypedComponentHeap&lt;T&gt; living in the embedded CoreCLR runtime.
 /// All mutations are dispatched through function pointers into CoreCLR so write barriers always
-/// fire on the managed side. The AOT process never writes into the component array directly.
-///
-/// For blittable T, ReadyMGetPtrToFirst() returns a stable pinned pointer for read-only iteration.
-/// For non-blittable T, it returns IntPtr.Zero - callers must dispatch through the delegates instead.
+/// fire on the managed side. The AOT process never writes into the component array directly, and
+/// never forms an address into it: a mod component may hold managed references, so the array cannot
+/// be pinned, and only the runtime that owns it can safely turn a slot into a reference. Callers
+/// name a component by this heap's <see cref="Self"/> handle plus an index instead.
 /// </summary>
 public sealed class ExternallyManagedHeap : StructHeap
 {
     // Opaque GCHandle of the CoreCLR TypedComponentHeap<T>. Passed as context into CopyTo.
     private readonly IntPtr self;
 
-    // Cached raw pointer into the pinned component array. Valid only when IsBlittable is true.
-    // Refreshed after every resize.
-    private IntPtr ptr;
-
     // Delegates wrapping the CoreCLR function pointers. Stored as fields so the GC on the AOT
     // side doesn't collect the wrapper objects (the CoreCLR side keeps the underlying stubs alive
     // via PinnedDelegateStore, but the AOT-side delegate wrappers are separate objects).
-    private readonly HeapGetPtrDelegate     getPtrToFirst;
     private readonly HeapGetCountDelegate   getLength;
     private readonly HeapResizeDelegate     resize;
     private readonly HeapMoveDelegate       move;
@@ -39,38 +34,36 @@ public sealed class ExternallyManagedHeap : StructHeap
     private readonly HeapClearRangeDelegate setRangeDefault;
 
     public readonly int Stride;
-    public readonly bool IsBlittable;
+
+    /// <summary>
+    /// GCHandle of the CoreCLR heap backing this one, for handing to the mod side so it can reach
+    /// its own array without an address crossing the runtime boundary.
+    /// </summary>
+    public IntPtr Self => self;
 
     internal ExternallyManagedHeap(int structIndex, AOTHeapPointers pointers)
         : base(structIndex)
     {
         Stride = pointers.Stride;
-        IsBlittable = pointers.IsBlittable == 1;
         self = pointers.Self;
 
-        getPtrToFirst   = Marshal.GetDelegateForFunctionPointer<HeapGetPtrDelegate>    (pointers.GetPtrToFirst);
         getLength       = Marshal.GetDelegateForFunctionPointer<HeapGetCountDelegate>  (pointers.GetLength);
         resize          = Marshal.GetDelegateForFunctionPointer<HeapResizeDelegate>    (pointers.Resize);
         move            = Marshal.GetDelegateForFunctionPointer<HeapMoveDelegate>      (pointers.Move);
         copyTo          = Marshal.GetDelegateForFunctionPointer<HeapCopyToDelegate>    (pointers.CopyTo);
         setDefault      = Marshal.GetDelegateForFunctionPointer<HeapSetDefaultDelegate>(pointers.SetDefault);
         setRangeDefault = Marshal.GetDelegateForFunctionPointer<HeapClearRangeDelegate>(pointers.SetRangeDefault);
-
-        ptr = getPtrToFirst();
     }
 
     // -------------------------------------------------------------------------
     // ReadyM extension
     // -------------------------------------------------------------------------
 
-    // Blittable T: stable pinned pointer, safe to return directly.
-    // Non-blittable T: call through the delegate for a live address.
-    //   Valid only within a no-GC region - ScanArchetypes guarantees this.
+    /// <summary>Always throws. Use <see cref="Self"/> and an index instead.</summary>
     public override IntPtr GetComponentPointer(int index)
-    {
-        var start = IsBlittable ? ptr : getPtrToFirst();
-        return start + index * Stride;
-    }
+        => throw new NotSupportedException(
+            "A mod component has no address the AOT side may hold: its array lives in the embedded " +
+            "runtime and cannot be pinned. Pass Self and the index to the mod instead.");
 
     // -------------------------------------------------------------------------
     // StructHeap core
@@ -78,11 +71,7 @@ public sealed class ExternallyManagedHeap : StructHeap
 
     protected override int ComponentsLength => getLength();
 
-    internal override void ResizeComponents(int capacity, int count)
-    {
-        resize(capacity, count);
-        ptr = getPtrToFirst(); // refresh - managed side may have re-pinned a new array
-    }
+    internal override void ResizeComponents(int capacity, int count) => resize(capacity, count);
 
     internal override void MoveComponent(int from, int to) => move(from, to);
 

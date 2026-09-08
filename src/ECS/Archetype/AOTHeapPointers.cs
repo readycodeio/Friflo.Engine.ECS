@@ -16,13 +16,9 @@ public readonly struct AOTHeapPointers
     /// <summary>GCHandle (Normal) of the TypedComponentHeap&lt;T&gt; instance.</summary>
     public IntPtr Self { get; init; }
 
-    /// <summary>Unsafe.SizeOf&lt;T&gt;() - used by the AOT side for pointer arithmetic on blittable heaps.</summary>
+    /// <summary>Unsafe.SizeOf&lt;T&gt;() - the stride the mod side reports for this component.</summary>
     public int Stride { get; init; }
 
-    /// <summary>Whether T is blittable and GetPtrToFirst returns a valid pointer.</summary>
-    public byte IsBlittable { get; init; }
-
-    public IntPtr GetPtrToFirst { get; init; } // () -> IntPtr
     public IntPtr GetLength { get; init; } // () -> int
     public IntPtr Resize { get; init; } // (int newCapacity, int copyCount) -> void
     public IntPtr Move { get; init; } // (int from, int to) -> void
@@ -31,7 +27,6 @@ public readonly struct AOTHeapPointers
     public IntPtr SetRangeDefault { get; init; } // (int start, int count) -> void
 }
 
-public delegate IntPtr HeapGetPtrDelegate();
 public delegate int    HeapGetCountDelegate();
 public delegate void   HeapResizeDelegate   (int newCapacity, int copyCount);
 public delegate void   HeapMoveDelegate     (int from, int to);
