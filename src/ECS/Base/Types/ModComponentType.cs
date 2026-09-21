@@ -28,6 +28,9 @@ public struct ModComponentInfo
 
     /// <summary>Function pointer: 1 if the component was changed from the API (server override).</summary>
     public IntPtr ChangedFromApi;
+    
+    /// How the component's changes travel: 0 reliable, 1 unreliable. Mirrors <c>ReadyM.SDK.Attributes.Delivery</c>.
+    public byte Delivery;
 }
 
 /// <summary>
