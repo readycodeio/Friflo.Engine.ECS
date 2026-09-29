@@ -123,9 +123,12 @@ public abstract partial class EntityStoreBase
     // use nested class to minimize noise in debugger
     internal static class Static
     {
-        internal static readonly    EntitySchema    EntitySchema    = SchemaUtils.RegisterSchemaTypes();
+        // Properties, not static readonly fields: a lazy initializer here would create the schema
+        // implicitly on first touch, and a throwing initializer would poison this class for the rest
+        // of the process. Both are worse than failing on the exact call that came too early.
+        internal static             EntitySchema    EntitySchema    => EntitySchemaHolder.Schema;
         /// <summary>All items in the <see cref="DefaultHeapMap"/> are always null</summary>
-        internal static readonly    StructHeap[]    DefaultHeapMap  = new StructHeap[EntitySchema.maxStructIndex];
+        internal static             StructHeap[]    DefaultHeapMap  => EntitySchemaHolder.DefaultHeapMap;
         
         /// <summary>The index of the <see cref="EntityStoreBase.defaultArchetype"/> - index is always 0</summary>
         internal const              int             DefaultArchIndex        =  0;
