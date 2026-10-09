@@ -102,6 +102,9 @@ public sealed class ExternallyManagedHeap : StructHeap
     internal override void StashComponent(int compIndex) 
         => throw new NotSupportedException("Stash is not supported for mod components.");
 
+    /// The AOT side owns this memory, so there is no managed array to hand over.
+    internal override Array? ComponentArray => null;
+
     internal override void UpdateIndex(Entity entity) { }
     internal override void AddIndex(Entity entity) { }
     internal override void RemoveIndex(Entity entity) { }

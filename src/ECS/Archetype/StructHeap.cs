@@ -42,6 +42,12 @@ public abstract class StructHeap : IComponentStash
     internal  abstract  object      GetComponentDebug       (int compIndex);
     internal  abstract  Bytes       Write                   (ObjectWriter writer, int compIndex);
     internal  abstract  void        Read                    (ObjectReader reader, int compIndex, JsonValue json);
+    
+    /// <summary>
+    /// Opaque reference to the component array. Null when this side does not own one.
+    /// </summary>
+    internal  abstract  Array?        ComponentArray          { get; }
+
     public  abstract  IntPtr        GetComponentPointer     (int index);
     internal  abstract  void        UpdateIndex             (Entity entity);
     internal  abstract  void        AddIndex                (Entity entity);

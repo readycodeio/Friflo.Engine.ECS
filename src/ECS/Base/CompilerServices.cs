@@ -1,8 +1,9 @@
-﻿
+
 using System;
 using System.Runtime.CompilerServices;
 
 [assembly: CLSCompliant(true)]
+[assembly: InternalsVisibleTo("ReadyM.SDK.Client")]
 [assembly: InternalsVisibleTo("Tests-internal")]
 [assembly: InternalsVisibleTo("Fliox.Tests-internal")]
 
