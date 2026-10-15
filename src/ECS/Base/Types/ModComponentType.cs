@@ -31,6 +31,14 @@ public struct ModComponentInfo
     
     /// How the component's changes travel: 0 reliable, 1 unreliable. Mirrors <c>ReadyM.SDK.Attributes.Delivery</c>.
     public byte Delivery;
+
+    /// <summary>Function pointer writing the component's save record, or zero when it is not savable.</summary>
+    public IntPtr WriteSave;
+    public IntPtr ReadSave;
+
+    /// <summary>The component's save name, a null-terminated UTF-16 string the mod side keeps alive. Zero when it is not savable.</summary>
+    public IntPtr SaveName;
+    public ushort SaveVersion;
 }
 
 /// <summary>
